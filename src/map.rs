@@ -1,15 +1,17 @@
+use std::{rc::Rc, cell::RefCell};
+
 use cairo::Context;
 
-use crate::{node::Node, road::Road};
+use crate::{road::Road, intersection::Intersection};
 
 pub struct Map {
-    pub nodes: Vec<Node>,
+    pub intersections: Vec<Rc<RefCell<Intersection>>>,
     pub roads: Vec<Road>,
 }
 
 impl Map {
     pub fn new() -> Self {
-        Self { nodes: Vec::new(), roads: Vec::new() }
+        Self { intersections: Vec::new(), roads: Vec::new() }
     }
 
     pub fn draw(&self, context: &Context) {
@@ -17,10 +19,8 @@ impl Map {
             road.draw(context);
         }
 
-        for node in &self.nodes {
-            node.draw(context, 30.0);
+        for intersection in &self.intersections {
+            intersection.borrow().draw(context);
         }
-
-        println!("Nodes: {}", self.nodes.len());
     }
 }

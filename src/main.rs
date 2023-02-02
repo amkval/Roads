@@ -1,6 +1,6 @@
 use std::{
     sync::{Arc, Mutex},
-    thread,
+    thread, rc::Rc, cell::RefCell,
 };
 
 use cairo::glib::{Continue, MainContext, PRIORITY_DEFAULT};
@@ -12,15 +12,17 @@ use gtk4::{
 
 extern crate cairo;
 
+mod connection;
 mod curve;
+mod intersection;
 mod lane;
 mod map;
 mod node;
+mod property;
 mod road;
 
-use crate::curve::Curve;
+use crate::intersection::Intersection;
 use crate::map::Map;
-use crate::node::Node;
 use crate::road::Road;
 
 fn main() {
@@ -42,18 +44,6 @@ fn main() {
         let drawing_area = DrawingArea::new();
         let map = Arc::new(Mutex::new(Map::new()));
 
-        // Initialize Game
-        {
-            let map = map.clone();
-            let locations: Vec<(f64, f64)> = vec![(100., 100.), (200., 100.), (300., 100.)];
-            let nodes: Vec<Node> = locations.iter().map(|(x, y)| Node::new(*x, *y)).collect();
-            let width = 20.;
-            let curve = Curve::new(nodes[0], nodes[1], nodes[2]);
-            let road = Road::new(curve, width);
-            let mut map = map.lock().unwrap();
-            map.roads.push(road);
-        }
-
         // Set Draw Function
         {
             let map = map.clone();
@@ -71,7 +61,43 @@ fn main() {
             gesture.connect_released(move |gesture: &gtk4::GestureClick, _, x, y| {
                 gesture.set_state(gtk4::EventSequenceState::Claimed);
                 println!("Mouse Button Released! {:.1} {:.1}", x, y);
-                map.lock().unwrap().nodes.push(Node::new(x, y));
+
+                let mut map = map.lock().unwrap();
+
+                // Did we click on an existing Intersection?
+                let result = map.intersections.iter().find(|intersection| {
+                    (intersection.borrow().center.x - x).abs() < 20.0
+                        && (intersection.borrow().center.y - y).abs() < 20.0
+                });
+
+                let new_intersection = match result {
+                    Some(intersection) => intersection.clone(),
+                    None => {
+                        map.intersections.push(Rc::new(RefCell::new(Intersection::new(x, y))));
+                        map.intersections.last().unwrap().clone()
+                    }
+                };
+
+                // Add Road if we have more than one Intersection.
+                if map.intersections.len() > 1 {
+                    let old_intersection= map.intersections.get(map.intersections.len()-2).unwrap().clone();
+
+                    let middle_intersection = Rc::new(RefCell::new(Intersection::new(
+                        new_intersection.borrow().center.x
+                            - (new_intersection.borrow().center.x - old_intersection.borrow().center.x) / 2.0,
+                        new_intersection.borrow().center.y
+                            - (new_intersection.borrow().center.y - old_intersection.borrow().center.y) / 2.0,
+                    )));
+
+                    let new_road = Road::new(
+                        old_intersection,
+                        middle_intersection,
+                        new_intersection,
+                        20.0,
+                    );
+
+                    map.roads.push(new_road);
+                }
             });
             drawing_area.add_controller(&gesture);
         }
@@ -81,11 +107,10 @@ fn main() {
 
         // Update loop
         let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
-        let loop_thread = thread::spawn(move || {
+        let _loop_thread = thread::spawn(move || {
             let duration = std::time::Duration::from_millis(60);
             loop {
                 thread::sleep(duration);
-                println!("Loop! Woop!");
                 sender.send(true).expect("Oh no! Update failed!");
             }
         });

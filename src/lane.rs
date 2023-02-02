@@ -14,15 +14,15 @@ impl Lane {
     }
 
     pub fn draw(&self, context: &Context) {
-        self.curve.n0.draw(context, self.width);
-        self.curve.n1.draw(context, self.width);
-        self.curve.n2.draw(context, self.width);
+        //self.curve.n0.draw(context, self.width);
+        //self.curve.n1.draw(context, self.width);
+        //self.curve.n2.draw(context, self.width);
 
         // Center Curve
         context.set_source_rgb(0.60, 0.20, 0.60);
         context.move_to(self.curve.n0.x, self.curve.n0.y);
         self.curve.plot(context);
-        context.stroke();
+        context.stroke().expect("Woops! Draw failed!");
 
         // Offset Curve
         context.set_source_rgb(0.20, 0.20, 0.20);
@@ -36,6 +36,8 @@ impl Lane {
         context.line_to(curve2.n0.x, curve2.n0.y);
         curve2.plot(context);
         context.close_path();
-        context.fill();
+        
+        context.stroke().expect("OMG!");
+        //context.fill().expect("Woops! Draw failed!");
     }
 }

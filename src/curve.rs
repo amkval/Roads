@@ -32,6 +32,13 @@ impl Curve {
     pub fn plot(&self, context: &Context) {
         quadratic_to(context, &self.n0, &self.n1, &self.n2);
     }
+
+    pub fn length(&self) -> f64 {
+        let dx = (self.n0.x - self.n2.x).abs();
+        let dy = (self.n0.y - self.n2.y).abs();
+
+        (dx.powi(2) + dy.powi(2)).sqrt()
+    }
 }
 
 pub fn quadratic_to(context: &Context, n0: &Node, n1: &Node, n2: &Node) {
