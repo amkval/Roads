@@ -16,12 +16,16 @@ impl Node {
     pub fn get_angle(&self, node: &Node) -> f64 {
         let dx = node.x - self.x;
         let dy = node.y - self.y;
-        dx.atan2(dy)
+        let mut a = dy.atan2(dx);
+        if a < 0.0 {
+            a += PI * 2.0;
+        }
+        a
     }
 
     pub fn offset(&self, angle: f64, offset: f64) -> Node {
-        let x = self.x + angle.sin() * offset;
-        let y = self.y + angle.cos() * offset;
+        let x = self.x + angle.cos() * offset;
+        let y = self.y + angle.sin() * offset;
         Node::new(x, y)
     }
 

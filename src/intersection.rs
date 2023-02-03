@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use cairo::Context;
 
 use crate::{connection::{Connection, ConnectionKind}, curve::Curve, lane::Lane, node::Node, road::Road};
@@ -28,7 +30,7 @@ impl Intersection {
     }
 
     pub fn draw(&self, context: &Context) {
-        self.center.draw(context, 10.0);
+        self.center.draw(context, 3.0);
 
         for lane in &self.lanes {
             lane.draw(context);
@@ -38,13 +40,19 @@ impl Intersection {
     pub fn add_connection(&mut self, new_connection: Connection) {
         // Setup lanes for new connection:
         for connection in &self.connections {
-            let a = (connection.angle - new_connection.angle).abs() / 2.0 + connection.angle;
+            let mut a = connection.angle;
+            let b = new_connection.angle;
 
-            let middle_node = self.center.offset(a, 10.0);
+            if b < a {
+                a += 2.0 * PI;
+            }
+            
+            let c = a + (b - a) / 2.0;
+            let middle_node = self.center.offset(c, 10.0);
             let curve = Curve::new(
-                new_connection.center,
-                middle_node,
                 connection.center,
+                middle_node,
+                new_connection.center,
             );
             self.lanes.push(Lane::new(curve, 10.0));
         }

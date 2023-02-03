@@ -14,12 +14,16 @@ impl Lane {
     }
 
     pub fn draw(&self, context: &Context) {
-        //self.curve.n0.draw(context, self.width);
-        //self.curve.n1.draw(context, self.width);
-        //self.curve.n2.draw(context, self.width);
+        self.curve.n0.draw(context, 2.0);
+        self.curve.n1.draw(context, 2.0);
+        self.curve.n2.draw(context, 2.0);
 
         // Center Curve
         context.set_source_rgb(0.60, 0.20, 0.60);
+        self.curve.plot_new(context);
+        context.stroke().expect("Darn, you got me good!");
+
+        context.set_source_rgb(0.20, 0.60, 0.60);
         context.move_to(self.curve.n0.x, self.curve.n0.y);
         self.curve.plot(context);
         context.stroke().expect("Woops! Draw failed!");

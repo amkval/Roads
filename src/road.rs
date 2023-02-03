@@ -19,13 +19,13 @@ impl Road {
         let mut curve = Curve::new(i0.borrow().center, i1.borrow().center, i2.borrow().center);
 
         let angle1 = curve.n0.get_angle(&curve.n2);
-        let angle2 = angle1 + PI / 2.0;
+        let angle2 = angle1 - PI / 2.0;
         let angle3 = curve.n2.get_angle(&curve.n0);
         let angle4 = angle3 + PI / 2.0;
 
-        let n0 = i0.borrow().center.offset(angle1, width).offset(angle4, width/2.0);
+        let n0 = i0.borrow().center.offset(angle1, width).offset(angle2, width/2.0);
         let n2 = i2.borrow().center.offset(angle3, width).offset(angle4, width/2.0);
-        i0.borrow_mut().add_connection(Connection::new(n0, ConnectionKind::In, angle1));
+        i0.borrow_mut().add_connection(Connection::new(n0, ConnectionKind::Out, angle1));
         i2.borrow_mut().add_connection(Connection::new(n2, ConnectionKind::In, angle3));
 
         curve.n0 = curve.n0.offset(angle1, width);
@@ -85,13 +85,15 @@ impl Road {
         //self.curve.n1.draw(context, self.width);
         //self.curve.n2.draw(context, self.width);
 
-        let lane1 = Lane::new(self.curve.offset(11.0), self.width / 2.0);
-        let lane2 = Lane::new(self.curve.reverse().offset(11.0), self.width / 2.0);
+        let lane1 = Lane::new(self.curve.offset(10.0), self.width / 2.0);
+        //let lane2 = Lane::new(self.curve.reverse().offset(11.0), self.width / 2.0);
         lane1.draw(context);
-        lane2.draw(context);
+        //lane2.draw(context);
 
+        /*
         for property in &self.properties {
             property.draw(context);
         }
+        */
     }
 }
