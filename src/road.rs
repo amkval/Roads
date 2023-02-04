@@ -54,6 +54,7 @@ impl Road {
                     .offset(angle1, i + plot_width)
                     .offset(angle2, width),
             ));
+            /*
             properties.push(Property::new(
                 PropertyKind::Commercial,
                 curve.n2.offset(angle3, i).offset(angle4, width),
@@ -70,6 +71,7 @@ impl Road {
                     .offset(angle3, i + plot_width)
                     .offset(angle4, width),
             ));
+            */
             i += plot_width;
         }
 
@@ -86,14 +88,13 @@ impl Road {
         //self.curve.n2.draw(context, self.width);
 
         let lane1 = Lane::new(self.curve.offset(10.0), self.width / 2.0);
-        //let lane2 = Lane::new(self.curve.reverse().offset(11.0), self.width / 2.0);
+        let lane2 = Lane::new(self.curve.reverse().offset(10.0), self.width / 2.0);
         lane1.draw(context);
-        //lane2.draw(context);
+        lane2.draw(context);
 
-        /*
+        
         for property in &self.properties {
             property.draw(context);
         }
-        */
     }
 }

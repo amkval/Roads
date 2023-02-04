@@ -30,7 +30,7 @@ impl Intersection {
     }
 
     pub fn draw(&self, context: &Context) {
-        self.center.draw(context, 3.0);
+        //self.center.draw(context, 3.0);
 
         for lane in &self.lanes {
             lane.draw(context);

@@ -19,23 +19,25 @@ impl Curve {
         Curve::new( self.n2, self.n1, self.n0 )
     }
 
+    // Fix this to make more sense
     pub fn offset(&self, offset: f64) -> Curve {
         let a0 = self.n0.get_angle(&self.n1) - PI / 2.;
-        let a1 = self.n1.get_angle(&self.n2) - PI / 2.;
         let a2 = self.n2.get_angle(&self.n1) + PI / 2.;
-        println!("a0: {:.2}", a0);
-        println!("a1: {:.2}", a1);
-        println!("a2: {:.2}", a2);
+        
         let n0 = self.n0.offset(a0, offset);
-        println!("n0: {:.0},{:.0}", n0.x, n0.y);
-        println!("self.n0: {:.0},{:.0}", self.n0.x, self.n0.y);
-        let n1 = self.n1.offset(a1, offset);
-        println!("n1: {:.0},{:.0}", n1.x, n1.y);
-        println!("self.n1: {:.0},{:.0}", self.n1.x, self.n1.y);
         let n2 = self.n2.offset(a2, offset);
-        println!("n2: {:.0},{:.0}", n2.x, n2.y);
-        println!("self.n2: {:.0},{:.0}", self.n2.x, self.n2.y);
-        Curve::new(n0, n1, n2)
+
+        let mut a = self.n0.get_angle(&self.n1);
+        let b = self.n2.get_angle(&self.n1);
+
+        if b < a {
+            a += 2.0 * PI;
+        }
+        
+        let c = a + (b - a) / 2.0;
+        let middle_node = self.n1.offset(c, -offset);
+
+        Curve::new(n0, middle_node, n2)
     }
 
     pub fn plot(&self, context: &Context) {
@@ -43,7 +45,14 @@ impl Curve {
     }
 
     pub fn plot_new(&self, context: &Context) {
-        // New plotting function using arcs
+        /*
+        context.set_source_rgb(1.0, 0.0, 0.0);
+        self.n0.draw(context, 3.0);
+        context.set_source_rgb(0.0, 1.0, 0.0);
+        self.n1.draw(context, 3.0);
+        context.set_source_rgb(0.0, 0.0, 1.0);
+        self.n2.draw(context, 3.0);
+        */
 
         // Find angle to center of arc
         let mut a0 = self.n0.get_angle(&self.n1) - PI / 2.0;
@@ -67,11 +76,7 @@ impl Curve {
         let c2 = a2 * self.n2.x + b2 * self.n2.y;
 
         let mut determinant = a1 * b2 - a2 * b1;
-        println!("Determinant {:.5}", determinant);
-
         determinant = (determinant * 100.0 ).round() / 100.0;
-
-        println!("Determinant {:.5}", determinant);
 
         if determinant.abs() == 0.0 {
             // The line is straight, draw a line
@@ -83,16 +88,12 @@ impl Curve {
             let y = (a1 * c2 - a2 * c1) / determinant;
             let center = Node::new(x, y);
 
-            center.draw(context, 5.0);
-            self.n0.draw(context, 7.0);
-            self.n2.draw(context, 5.0);
-
             // Find radius of new arc
             let radius = ((center.x - self.n0.x).powf(2.0) + (center.y - self.n0.y).powf(2.0)).sqrt();
             
             // Find start and stop of new arc
-            let mut angle0 = center.get_angle(&self.n0);
-            let mut angle2 = center.get_angle(&self.n2);
+            let angle0 = center.get_angle(&self.n0);
+            let angle2 = center.get_angle(&self.n2);
             
             // Left or right?
             let d = ((self.n0.x - self.n2.x).powf(2.0) + (self.n0.y - self.n2.y).powf(2.0)).sqrt();
@@ -102,7 +103,7 @@ impl Curve {
             if d < d2 {
                 context.arc(center.x, center.y, radius, angle0, angle2);
             } else {
-                context.arc(center.x, center.y, radius, angle2, angle0);
+                context.arc_negative(center.x, center.y, radius, angle0, angle2);
             }
         }
     }

@@ -30,7 +30,7 @@ impl Node {
     }
 
     pub fn draw(&self, context: &Context, width: f64) {
-        context.set_source_rgb(0.0, 0.0, 0.0);
+        //context.set_source_rgb(0.0, 0.0, 0.0);
         context.arc(self.x, self.y, width, 0.0, PI * 2.0);
         context.stroke().expect("Woops! Draw failed!");
     }
