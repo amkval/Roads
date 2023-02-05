@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use cairo::Context;
 
-use crate::{connection::{Connection, ConnectionKind}, curve::Curve, lane::Lane, node::Node, road::Road};
+use crate::{connection::{Connection, ConnectionKind, self}, curve::Curve, lane::Lane, node::Node, road::Road};
 
 /*
     Center Point
@@ -30,34 +30,30 @@ impl Intersection {
     }
 
     pub fn draw(&self, context: &Context) {
-        //self.center.draw(context, 3.0);
-
         for lane in &self.lanes {
             lane.draw(context);
         }
     }
 
     pub fn add_connection(&mut self, new_connection: Connection) {
+        // Add connection to list
+        self.connections.push(new_connection);
+
+        self.lanes.clear();
+
         // Setup lanes for new connection:
         for connection in &self.connections {
-            let mut a = connection.angle;
-            let b = new_connection.angle;
-
-            if b < a {
-                a += 2.0 * PI;
+            for second_connection in &self.connections {       
+                if connection.kind == ConnectionKind::In && second_connection.kind == ConnectionKind::Out {
+                    let curve = Curve::new(
+                        connection.center,
+                        second_connection.center,
+                        connection.angle,
+                        second_connection.angle,
+                    );
+                    self.lanes.push(Lane::new(curve, 10.0));
+                }
             }
-            
-            let c = a + (b - a) / 2.0;
-            let middle_node = self.center.offset(c, 10.0);
-            let curve = Curve::new(
-                connection.center,
-                middle_node,
-                new_connection.center,
-            );
-            self.lanes.push(Lane::new(curve, 10.0));
         }
-
-        // Add road to list?
-        self.connections.push(new_connection);
     }
 }

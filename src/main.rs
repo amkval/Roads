@@ -43,33 +43,7 @@ fn main() {
 
         let drawing_area = DrawingArea::new();
         let map = Arc::new(Mutex::new(Map::new()));
-
-        // Test Section
-        let node1 = Node::new(100., 100.);
-        let node_n = Node::new(100., 50.);
-        let node_e = Node::new(150., 100.);
-        let node_s = Node::new(100., 150.);
-        let node_w = Node::new(50., 100.);
-        let node_no = node1.offset(PI * 3.0 / 2.0, 10.);
-        let node_eo = node1.offset(0.0, 10.);
-        let node_so = node1.offset(PI / 2.0, 10.);
-        let node_wo = node1.offset(PI, 10.);
-        let curve1 = Curve::new(node_w, node1, node_e);
-        let curve_n = curve1.offset(10.);
-
-        println!("North: {:.5}", node1.get_angle(&node_n));
-        println!("East: {:.5}", node1.get_angle(&node_e));
-        println!("South: {:.5}", node1.get_angle(&node_s));
-        println!("West: {:.5}", node1.get_angle(&node_w));
-        println!("North Offset: x: {:.5}, y {:.5}", node_no.x, node_no.y);
-        println!("East Offset: x: {:.5}, y {:.5}", node_eo.x, node_eo.y);
-        println!("South Offset: x: {:.5}, y {:.5}", node_so.x, node_so.y);
-        println!("West Offset: x: {:.5}, y {:.5}", node_wo.x, node_wo.y);
-
-        println!("Curve: {:.2},{:.2} {:.2},{:.2} {:.2},{:.2} " , curve1.n0.x, curve1.n0.y , curve1.n1.x, curve1.n1.y , curve1.n2.x, curve1.n2.y );
-        println!("Curve_n: {:.2},{:.2} {:.2},{:.2} {:.2},{:.2} " , curve_n.n0.x, curve_n.n0.y , curve_n.n1.x, curve_n.n1.y , curve_n.n2.x, curve_n.n2.y );
-
-
+        
         // Set Draw Function
         {
             let map = map.clone();

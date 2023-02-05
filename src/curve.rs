@@ -7,122 +7,122 @@ use crate::node::Node;
 pub struct Curve {
     pub n0: Node,
     pub n1: Node,
-    pub n2: Node,
+    pub c: Node,
+    pub is_curved: bool,
+    pub is_reversed: bool,
 }
 
 impl Curve {
-    pub fn new(n0: Node, n1: Node, n2: Node) -> Self {
-        Self { n0, n1, n2 }
-    }
+    pub fn new(n0: Node, n1: Node, a0: f64, a1: f64) -> Self {
+        // Find the centerpoint of the curve
 
-    pub fn reverse(&self) -> Curve {
-        Curve::new( self.n2, self.n1, self.n0 )
-    }
-
-    // Fix this to make more sense
-    pub fn offset(&self, offset: f64) -> Curve {
-        let a0 = self.n0.get_angle(&self.n1) - PI / 2.;
-        let a2 = self.n2.get_angle(&self.n1) + PI / 2.;
-        
-        let n0 = self.n0.offset(a0, offset);
-        let n2 = self.n2.offset(a2, offset);
-
-        let mut a = self.n0.get_angle(&self.n1);
-        let b = self.n2.get_angle(&self.n1);
-
-        if b < a {
-            a += 2.0 * PI;
-        }
-        
-        let c = a + (b - a) / 2.0;
-        let middle_node = self.n1.offset(c, -offset);
-
-        Curve::new(n0, middle_node, n2)
-    }
-
-    pub fn plot(&self, context: &Context) {
-        quadratic_to(context, &self.n0, &self.n1, &self.n2);
-    }
-
-    pub fn plot_new(&self, context: &Context) {
-        /*
-        context.set_source_rgb(1.0, 0.0, 0.0);
-        self.n0.draw(context, 3.0);
-        context.set_source_rgb(0.0, 1.0, 0.0);
-        self.n1.draw(context, 3.0);
-        context.set_source_rgb(0.0, 0.0, 1.0);
-        self.n2.draw(context, 3.0);
-        */
-
-        // Find angle to center of arc
-        let mut a0 = self.n0.get_angle(&self.n1) - PI / 2.0;
-        let a1 = self.n2.get_angle(&self.n1) + PI / 2.0;
-
-        if a1 < a0 {
-            a0 += 2.0 * PI;
-        }
-
-        // Make temporary offset points for calculations.
-        let on0 = self.n0.offset(a0, 10.0);
-        let on2 = self.n2.offset(a1, 10.0);
+        // Make temporary Nodes for calculations
+        let no0 = n0.offset(a0 + PI / 2.0, 10.0);
+        let no1 = n1.offset(a1 + PI / 2.0, 10.0);
 
         // Fancy calculation to find intersection of lines
-        let a1 = on0.y - self.n0.y;
-        let b1 = self.n0.x - on0.x;
-        let c1 = a1 * self.n0.x + b1 * self.n0.y;
+        let a1 = no0.y - n0.y;
+        let b1 = n0.x - no0.x;
+        let c1 = a1 * n0.x + b1 * n0.y;
 
-        let a2 = on2.y - self.n2.y;
-        let b2 = self.n2.x - on2.x;
-        let c2 = a2 * self.n2.x + b2 * self.n2.y;
+        let a2 = no1.y - n1.y;
+        let b2 = n1.x - no1.x;
+        let c2 = a2 * n1.x + b2 * n1.y;
 
         let mut determinant = a1 * b2 - a2 * b1;
-        determinant = (determinant * 100.0 ).round() / 100.0;
+        determinant = (determinant * 100.0).round() / 100.0;
 
+        // Find the new center
         if determinant.abs() == 0.0 {
-            // The line is straight, draw a line
-            context.move_to(self.n0.x, self.n0.y);
-            context.line_to(self.n2.x, self.n2.y);
-        } else {   
-            // Find the new center
+            let c = Node::new((n0.x + n1.x) / 2.0, (n0.y + n1.y) / 2.0);
+            Self {
+                n0,
+                n1,
+                c,
+                is_curved: false,
+                is_reversed: false,
+            }
+        } else {
             let x = (b2 * c1 - b1 * c2) / determinant;
             let y = (a1 * c2 - a2 * c1) / determinant;
-            let center = Node::new(x, y);
+            let c = Node::new(x, y);
 
-            // Find radius of new arc
-            let radius = ((center.x - self.n0.x).powf(2.0) + (center.y - self.n0.y).powf(2.0)).sqrt();
-            
-            // Find start and stop of new arc
-            let angle0 = center.get_angle(&self.n0);
-            let angle2 = center.get_angle(&self.n2);
-            
-            // Left or right?
-            let d = ((self.n0.x - self.n2.x).powf(2.0) + (self.n0.y - self.n2.y).powf(2.0)).sqrt();
-            let d2 = ((on0.x - on2.x).powf(2.0) + (on0.y - on2.y).powf(2.0)).sqrt();
+            let d0 = ((n0.x - c.x).powf(2.0) + (n0.y - c.y).powf(2.0)).sqrt();
+            let d1 = ((no0.x - c.x).powf(2.0) + (no0.y - c.y).powf(2.0)).sqrt();
 
-
-            if d < d2 {
-                context.arc(center.x, center.y, radius, angle0, angle2);
-            } else {
-                context.arc_negative(center.x, center.y, radius, angle0, angle2);
+            let is_reversed = d0 > d1;
+            Self {
+                n0,
+                n1,
+                c,
+                is_curved: true,
+                is_reversed,
             }
         }
     }
 
+    pub fn new_1(n0: Node, n1: Node, c: Node, is_curved: bool, is_reversed: bool) -> Self {
+        Self {
+            n0,
+            n1,
+            c,
+            is_curved,
+            is_reversed,
+        }
+    }
+
+    pub fn reverse(&self) -> Curve {
+        Curve::new_1(self.n1, self.n0, self.c, self.is_curved, !self.is_reversed)
+    }
+
+    // Fix this to make more sense
+    pub fn offset(&self, mut offset: f64) -> Curve {
+        if self.is_curved {
+            if self.is_reversed {
+                offset = -offset;
+            }
+            let a0 = self.n0.get_angle(&self.c) + PI;
+            let a1 = self.n1.get_angle(&self.c) + PI;
+            let n0 = self.n0.offset(a0, offset);
+            let n1 = self.n1.offset(a1, offset);
+            let c = self.c.clone();
+            Curve::new_1(n0, n1, c, self.is_curved, self.is_reversed)
+        } else {
+            let a = self.n0.get_angle(&self.c) - PI / 2.0;
+            let n0 = self.n0.offset(a, offset);
+            let n1 = self.n1.offset(a, offset);
+            let c = self.c.offset(a, offset);
+            Curve::new_1(n0, n1, c, self.is_curved, self.is_reversed)
+        }
+    }
+
+    pub fn plot(&self, context: &Context) {
+        if !self.is_curved {
+            // The line is straight, draw a line
+            context.move_to(self.n0.x, self.n0.y);
+            context.line_to(self.n1.x, self.n1.y);
+        } else {
+            // Find radius of new arc
+            let radius =
+                ((self.c.x - self.n0.x).powf(2.0) + (self.c.y - self.n0.y).powf(2.0)).sqrt();
+
+            // Find start and stop of new arc
+            let a0 = self.c.get_angle(&self.n0);
+            let a1 = self.c.get_angle(&self.n1);
+
+            if self.is_reversed {
+                context.arc_negative(self.c.x, self.c.y, radius, a0, a1);
+            } else {
+                context.arc(self.c.x, self.c.y, radius, a0, a1);
+            }
+        }
+    }
+
+    // TODO: Fix to handle curve distance!
     pub fn length(&self) -> f64 {
-        let dx = (self.n0.x - self.n2.x).abs();
-        let dy = (self.n0.y - self.n2.y).abs();
+        let dx = (self.n0.x - self.n1.x).abs();
+        let dy = (self.n0.y - self.n1.y).abs();
 
         (dx.powi(2) + dy.powi(2)).sqrt()
     }
-}
-
-pub fn quadratic_to(context: &Context, n0: &Node, n1: &Node, n2: &Node) {
-    context.curve_to(
-        (n0.x + 2.0 * n1.x) / 3.0,
-        (n0.y + 2.0 * n1.y) / 3.0,
-        (n2.x + 2.0 * n1.x) / 3.0,
-        (n2.y + 2.0 * n1.y) / 3.0,
-        n2.x,
-        n2.y,
-    );
 }

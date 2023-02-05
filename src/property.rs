@@ -45,7 +45,7 @@ impl Property {
         context.line_to(self.n2.x, self.n2.y);
         context.line_to(self.n3.x, self.n3.y);
         context.close_path();
-        context.stroke_preserve();
-        context.fill();
+        context.stroke_preserve().expect("OMG!");
+        context.fill().expect("OMG!");
     }
 }
