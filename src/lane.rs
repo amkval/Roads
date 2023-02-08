@@ -1,16 +1,29 @@
+use std::sync::{Arc, Mutex};
+
 use cairo::Context;
 
-use crate::curve::Curve;
+use crate::{connection::Connection, curve::Curve, node::Node};
 
 pub struct Lane {
+    pub c0: Arc<Mutex<Connection>>,
+    pub c1: Arc<Mutex<Connection>>,
     pub curve: Curve,
     pub width: f64,
 }
 
-
 impl Lane {
-    pub fn new(curve: Curve, width: f64) -> Self {
-        Self { curve, width }
+    pub fn new(
+        c0: Arc<Mutex<Connection>>,
+        c1: Arc<Mutex<Connection>>,
+        curve: Curve,
+        width: f64,
+    ) -> Self {
+        Self {
+            c0,
+            c1,
+            curve,
+            width,
+        }
     }
 
     pub fn draw(&self, context: &Context) {
@@ -21,27 +34,25 @@ impl Lane {
 
         curve1.plot(context);
         context.line_to(curve2.n0.x, curve2.n0.y);
-        
+
         curve2.plot(context);
         context.line_to(curve1.n0.x, curve1.n0.y);
-        
+
         context.set_source_rgb(0.50, 0.50, 0.50);
         context.stroke_preserve().expect("OMG!");
         context.fill().expect("Woops! Draw failed!");
 
-        // Center Curve
-        /*
-        context.set_source_rgb(0.0, 0.0, 0.5);
-        self.curve.n0.draw(context, 3.0);        
-        self.curve.n1.draw(context, 3.0);
-        
-        context.set_source_rgb(0.0, 0.5, 0.0);
-        self.curve.c.draw(context, 3.0);          
-        */
-        /*
+        // Draw Center Line
         context.set_source_rgb(0.60, 0.20, 0.60);
         self.curve.plot(context);
         context.stroke().expect("Darn, you got me good!");
-        */
+    }
+
+    pub fn length(&self) -> f64 {
+        self.curve.length()
+    }
+
+    pub fn position_at(&self, d: f64) -> Node {
+        self.curve.position_at(d)
     }
 }

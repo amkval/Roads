@@ -14,13 +14,11 @@ pub struct Curve {
 
 impl Curve {
     pub fn new(n0: Node, n1: Node, a0: f64, a1: f64) -> Self {
-        // Find the centerpoint of the curve
-
-        // Make temporary Nodes for calculations
+        // Temporary Nodes for calculations
         let no0 = n0.offset(a0 + PI / 2.0, 10.0);
         let no1 = n1.offset(a1 + PI / 2.0, 10.0);
 
-        // Fancy calculation to find intersection of lines
+        // Find intersection of lines
         let a1 = no0.y - n0.y;
         let b1 = n0.x - no0.x;
         let c1 = a1 * n0.x + b1 * n0.y;
@@ -75,7 +73,6 @@ impl Curve {
         Curve::new_1(self.n1, self.n0, self.c, self.is_curved, !self.is_reversed)
     }
 
-    // Fix this to make more sense
     pub fn offset(&self, mut offset: f64) -> Curve {
         if self.is_curved {
             if self.is_reversed {
@@ -102,11 +99,11 @@ impl Curve {
             context.move_to(self.n0.x, self.n0.y);
             context.line_to(self.n1.x, self.n1.y);
         } else {
-            // Find radius of new arc
+            // Find radius o arc
             let radius =
                 ((self.c.x - self.n0.x).powf(2.0) + (self.c.y - self.n0.y).powf(2.0)).sqrt();
 
-            // Find start and stop of new arc
+            // Find start and stop angle of new arc
             let a0 = self.c.get_angle(&self.n0);
             let a1 = self.c.get_angle(&self.n1);
 
@@ -118,11 +115,37 @@ impl Curve {
         }
     }
 
-    // TODO: Fix to handle curve distance!
     pub fn length(&self) -> f64 {
-        let dx = (self.n0.x - self.n1.x).abs();
-        let dy = (self.n0.y - self.n1.y).abs();
+        if self.is_curved {
+            let a0 = self.c.get_angle(&self.n0);
+            let a1 = self.c.get_angle(&self.n1);
 
-        (dx.powi(2) + dy.powi(2)).sqrt()
+            // TODO: Make this right!
+            let da = if self.is_reversed {
+                a0 - a1
+            } else {
+                a1 - a0
+            };
+
+            let radius = ((self.c.x - self.n0.x).powf(2.0) + (self.c.y - self.n0.y).powf(2.0)).sqrt();
+            (da / 360.0) * 2.0 * PI * radius
+        } else {
+            let dx = (self.n0.x - self.n1.x).abs();
+            let dy = (self.n0.y - self.n1.y).abs();   
+            (dx.powi(2) + dy.powi(2)).sqrt()
+        }
+    }
+
+    pub fn position_at(&self, d: f64) -> Node {
+        if self.is_curved {
+            let a0 = self.c.get_angle(&self.n0);
+            let radius = ((self.c.x - self.n0.x).powf(2.0) + (self.c.y - self.n0.y).powf(2.0)).sqrt();
+            let a = d/radius;
+            self.c.offset(a0 + a, radius)
+        } else {
+            let d0 = ((self.n0.x - self.n1.x).powf(2.0) + (self.n0.y - self.n1.y).powf(2.0)).sqrt();
+            let t = d / d0;
+            Node::new((1.0 - t) * self.n0.x + t * self.n1.x, (1.0 - t) * self.n0.y + t * self.n1.y)
+        }
     }
 }
