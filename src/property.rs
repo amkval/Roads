@@ -3,6 +3,7 @@ use cairo::Context;
 use crate::node::Node;
 
 pub enum PropertyKind {
+    Vacant,
     Residential,
     Commercial,
     Industrial,
@@ -38,6 +39,9 @@ impl Property {
             PropertyKind::Industrial => {
                 context.set_source_rgba(0.0, 0.90, 0.90, 0.25);
             }
+            PropertyKind::Vacant => {
+                context.set_source_rgba(0.90, 0.90, 0.90, 0.25)
+            },
         }
 
         context.move_to(self.n0.x, self.n0.y);

@@ -38,32 +38,30 @@ impl Road {
         let mut i2_lock = i2.lock().unwrap();
 
         // Angles for connecting to Intersections
-        let a0 = i0_lock.center.get_angle(&i2_lock.center);
+        let a0 = i0_lock.center.angle(&i2_lock.center);
         let a1 = a0 - PI / 2.0;
-        let a2 = i2_lock.center.get_angle(&i0_lock.center);
+        let a2 = i2_lock.center.angle(&i0_lock.center);
         let a3 = a2 + PI / 2.0;
         
         // Define Road Central Curve
         let n0 = i0_lock.center.offset(a0, width * 1.5);
         let n1 = i2_lock.center.offset(a2, width * 1.5);
-        let curve = Curve::new(n0, n1, a1, a3);
+        let curve = Curve::new(n0, n1, a0, a2);
         
         // Get connections from Intersections
-        println!("Wololo!");
         let c0s = i0_lock.get_connections(a0, width);
         let c1s = i2_lock.get_connections(a2, width);
-        println!("We got here, not!");
 
         // Add Properties
+        let mut properties = Vec::new();
         let length = curve.length();
         let plot_width = 100.0;
         let plot_depth = 100.0;
-        let mut properties = Vec::new();
         let mut i = 0.0;
 
         while i < length - width - plot_width {
             properties.push(Property::new(
-                PropertyKind::Residential,
+                PropertyKind::Vacant,
                 curve.n0.offset(a0, i).offset(a1, width),
                 curve.n0.offset(a0, i).offset(a1, width + plot_depth),
                 curve
@@ -71,6 +69,18 @@ impl Road {
                     .offset(a0, i + plot_width)
                     .offset(a1, width + plot_depth),
                 curve.n0.offset(a0, i + plot_width).offset(a1, width),
+            ));
+            i += plot_width;
+        }
+
+        i = 0.0;
+        while i < length - width - plot_width {
+            properties.push(Property::new(
+                PropertyKind::Vacant,
+                curve.n0.offset(a0, i).offset(a3 + PI, width),
+                curve.n0.offset(a0, i).offset(a3 + PI, width + plot_depth),
+                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width + plot_depth),
+                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width),
             ));
             i += plot_width;
         }

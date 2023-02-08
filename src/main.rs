@@ -91,6 +91,17 @@ fn main() {
                     }
                 };
 
+                // Don't do anything if new == last.
+                match &toolbar.selected {
+                    Some(old) => {
+                        if Arc::ptr_eq(&new_intersection, old) {
+                            // They are the same.
+                            return;
+                        }
+                    },
+                    None => {},
+                }
+
                 if map.intersections.len() > 1 {
                     match &toolbar.selected {
                         Some(old_intersection) => {
@@ -184,16 +195,15 @@ fn main() {
             let map = map.clone();
             let (sender, receiver) = MainContext::channel(PRIORITY_DEFAULT);
             let _loop_thread = thread::spawn(move || {
-                let duration = std::time::Duration::from_millis(60);
+                let duration = std::time::Duration::from_millis(10);
                 loop {
-                    println!("Update!");
                     let map = map.lock().unwrap();
                     for agent in &map.agents {
                         agent.lock().unwrap().update();
                     }
                     drop(map);
                     thread::sleep(duration);
-                    sender.send(true).expect("Oh no! Update failed!");
+                    sender.send(true).expect("Failed, blame the developer.");
                 }
             });
             receiver.attach(None, move |_| {

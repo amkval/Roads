@@ -20,6 +20,9 @@ impl Map {
     }
 
     pub fn draw(&self, context: &Context) {
+        context.set_source_rgb(0.22, 0.48, 0.27);
+        context.paint().expect("omg!");
+
         for road in &self.roads {
             road.lock().unwrap().draw(context);
         }
