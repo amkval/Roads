@@ -6,8 +6,8 @@ use std::{
 use crate::{
     curve::Curve,
     intersection::Intersection,
-    lane::Lane,
-    property::{Property, PropertyKind},
+    lane::{Lane, LaneKind},
+    property::{Property, PropertyKind}, TILE,
 };
 
 use cairo::Context;
@@ -44,43 +44,43 @@ impl Road {
         let a3 = a2 + PI / 2.0;
         
         // Define Road Central Curve
-        let n0 = i0_lock.center.offset(a0, width * 1.5);
-        let n1 = i2_lock.center.offset(a2, width * 1.5);
+        let n0 = i0_lock.center.offset(a0, width);
+        let n1 = i2_lock.center.offset(a2, width);
         let curve = Curve::new(n0, n1, a0, a2);
         
         // Get connections from Intersections
-        let c0s = i0_lock.get_connections(a0, width);
-        let c1s = i2_lock.get_connections(a2, width);
+        let c0s = i0_lock.get_connections(a0, width / 2.0);
+        let c1s = i2_lock.get_connections(a2, width / 2.0);
 
         // Add Properties
         let mut properties = Vec::new();
         let length = curve.length();
-        let plot_width = 100.0;
-        let plot_depth = 100.0;
+        let plot_width = TILE * 4.0;
+        let plot_depth = TILE * 4.0;
         let mut i = 0.0;
 
-        while i < length - width - plot_width {
+        while i <= length - plot_width {
             properties.push(Property::new(
                 PropertyKind::Vacant,
-                curve.n0.offset(a0, i).offset(a1, width),
-                curve.n0.offset(a0, i).offset(a1, width + plot_depth),
+                curve.n0.offset(a0, i).offset(a1, width / 2.0),
+                curve.n0.offset(a0, i).offset(a1, width / 2.0 + plot_depth),
                 curve
                     .n0
                     .offset(a0, i + plot_width)
-                    .offset(a1, width + plot_depth),
-                curve.n0.offset(a0, i + plot_width).offset(a1, width),
+                    .offset(a1, width / 2.0 + plot_depth),
+                curve.n0.offset(a0, i + plot_width).offset(a1, width / 2.0),
             ));
             i += plot_width;
         }
 
         i = 0.0;
-        while i < length - width - plot_width {
+        while i <= length - plot_width {
             properties.push(Property::new(
                 PropertyKind::Vacant,
-                curve.n0.offset(a0, i).offset(a3 + PI, width),
-                curve.n0.offset(a0, i).offset(a3 + PI, width + plot_depth),
-                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width + plot_depth),
-                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width),
+                curve.n0.offset(a0, i).offset(a3 + PI, width / 2.0),
+                curve.n0.offset(a0, i).offset(a3 + PI, width / 2.0 + plot_depth),
+                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width / 2.0 + plot_depth),
+                curve.n0.offset(a0, i + plot_width).offset(a3 + PI, width / 2.0),
             ));
             i += plot_width;
         }
@@ -90,15 +90,17 @@ impl Road {
         let l0 = Arc::new(Mutex::new(Lane::new(
             c0s.first().unwrap().clone(),
             c1s.last().unwrap().clone(),
-            curve.offset(10.0),
+            curve.offset(2.5),
             width / 2.0,
+            LaneKind::Car
         )));
         lanes.push(l0.clone());
         let l1 = Arc::new(Mutex::new(Lane::new(
             c1s.first().unwrap().clone(),
             c0s.last().unwrap().clone(),
-            curve.reverse().offset(10.0),
+            curve.reverse().offset(2.5),
             width / 2.0,
+            LaneKind::Car
         )));
         lanes.push(l1.clone());
 

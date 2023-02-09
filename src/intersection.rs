@@ -8,7 +8,7 @@ use cairo::Context;
 use crate::{
     connection::{Connection, ConnectionKind},
     curve::Curve,
-    lane::Lane,
+    lane::{Lane, LaneKind},
     node::Node,
     road::Road,
 };
@@ -31,6 +31,7 @@ impl Intersection {
     }
 
     pub fn draw(&self, context: &Context) {
+        self.center.draw(context, 2.5);
         for lane in &self.lanes {
             lane.lock().unwrap().draw(context);
         }
@@ -43,21 +44,21 @@ impl Intersection {
         let a1 = a - PI / 2.0;
         
         // Connection centers
-        let n0 = self.center.offset(a, width * 1.5).offset(a0, width / 2.0);
-        let n2 = self.center.offset(a, width * 1.5).offset(a1, width / 2.0);
+        let n0 = self.center.offset(a, width * 2.0).offset(a0, width / 2.0);
+        let n2 = self.center.offset(a, width * 2.0).offset(a1, width / 2.0);
         
         // New connections
         let c0 = Arc::new(Mutex::new(Connection::new(
             n0,
             ConnectionKind::Out,
             a,
-            width / 2.,
+            width / 2.0,
         )));
         let c1 = Arc::new(Mutex::new(Connection::new(
             n2,
             ConnectionKind::In,
             a,
-            width / 2.,
+            width / 2.0,
         )));
         
         cs.push(c0.clone());
@@ -90,7 +91,8 @@ impl Intersection {
                             c0.clone(),
                             c1.clone(),
                             curve,
-                            10.0,
+                            5.0,
+                            LaneKind::Car
                         )));
                         c0_lock.out_lane.push(l.clone());
                         c1_lock.in_lane.push(l.clone());

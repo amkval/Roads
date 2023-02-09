@@ -44,8 +44,8 @@ impl Agent {
     }
 
     pub fn draw(&self, context: &Context ) {
-        context.set_source_rgb(1.0, 0.0, 0.0);
-        context.arc(self.c.x, self.c.y, 4.0, 0.0, PI * 2.0);
+        context.set_source_rgb(0.42, 0.45, 0.83);
+        context.arc(self.c.x, self.c.y, 2.5, 0.0, PI * 2.0);
         context.fill().expect("Woops! Draw failed!");
     }
 }

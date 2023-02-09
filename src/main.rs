@@ -30,6 +30,9 @@ use crate::map::Map;
 use crate::road::Road;
 use crate::toolbar::Toolbar;
 
+const SCALE: f64 = 2.0;
+const TILE: f64 = 8.0;
+
 fn main() {
     let app = Application::builder()
         .application_id("dev.kval.roads")
@@ -55,6 +58,8 @@ fn main() {
             let map = map.clone();
             drawing_area.set_draw_func(move |_, context, _, _| match map.lock() {
                 Ok(map) => {
+                    context.scale(SCALE, SCALE);
+                    context.set_line_width(1.0 / SCALE);
                     map.draw(context);
                 }
                 Err(_) => todo!(),
@@ -70,8 +75,8 @@ fn main() {
             gesture.connect_released(move |gesture: &gtk4::GestureClick, _, x, y| {
                 gesture.set_state(gtk4::EventSequenceState::Claimed);
                 println!("Mouse Button Released! {:.1} {:.1}", x, y);
-                let new_x = (x / 10.0).round() * 10.0;
-                let new_y = (y / 10.0).round() * 10.0;
+                let new_x = (x / SCALE / TILE).round() * TILE;
+                let new_y = (y / SCALE / TILE).round() * TILE;
 
                 let mut map = map.lock().unwrap();
                 let mut toolbar = toolbar.lock().unwrap();
@@ -127,7 +132,7 @@ fn main() {
                                 old_intersection.clone(),
                                 middle_intersection.clone(),
                                 new_intersection.clone(),
-                                20.0,
+                                10.0,
                             )));
 
                             old_intersection
