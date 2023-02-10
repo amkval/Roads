@@ -7,7 +7,7 @@ use crate::{
     curve::Curve,
     intersection::Intersection,
     lane::{Lane, LaneKind},
-    property::{Property, PropertyKind}, TILE,
+    property::{Property, PropertyKind}, TILE, road_profile::{RoadProfile},
 };
 
 use cairo::Context;
@@ -31,8 +31,10 @@ impl Road {
         i0: Arc<Mutex<Intersection>>,
         i1: Arc<Mutex<Intersection>>,
         i2: Arc<Mutex<Intersection>>,
-        width: f64,
+        road_profile: Arc<Mutex<RoadProfile>>,
     ) -> Self {
+        let width = road_profile.lock().unwrap().width();
+
         let mut i0_lock = i0.lock().unwrap();
         let mut i1_lock = i1.lock().unwrap();
         let mut i2_lock = i2.lock().unwrap();
@@ -49,8 +51,65 @@ impl Road {
         let curve = Curve::new(n0, n1, a0, a2);
         
         // Get connections from Intersections
-        let c0s = i0_lock.get_connections(a0, width / 2.0);
-        let c1s = i2_lock.get_connections(a2, width / 2.0);
+        let c0s = i0_lock.get_connections(a0, road_profile.clone());
+        let c1s = i2_lock.get_connections(a2, road_profile.clone());
+
+        // Add lanes to road
+        let mut lanes = Vec::new();
+        let mut offset = 0.0;
+        let mut i = 0;
+        for lane_kind in &road_profile.lock().unwrap().right_lane_kinds {
+            let width = match lane_kind {
+                LaneKind::Car => 4.0,
+                LaneKind::Bike => 2.0,
+                LaneKind::Pedestrian => 2.0,
+            };
+            offset += width / 2.0;
+            let l0 = Arc::new(Mutex::new(Lane::new(
+                c0s[i].clone(),
+                c1s[c1s.len() - i - 1].clone(),
+                curve.offset(offset),
+                width,
+                *lane_kind
+            )));
+            offset += width / 2.0;
+
+            // Add lanes to lane list
+            lanes.push(l0.clone());
+
+            // Add lanes to connections
+            c0s[i].lock().unwrap().out_lane.push(l0.clone());
+            c1s[c1s.len() - i - 1].lock().unwrap().in_lane.push(l0.clone());
+            i += 1;
+        }
+        
+        let mut offset = 0.0;
+        let mut i = 0;
+        for lane_kind in &road_profile.lock().unwrap().left_lane_kinds {
+            let width = match lane_kind {
+                LaneKind::Car => 4.0,
+                LaneKind::Bike => 2.0,
+                LaneKind::Pedestrian => 2.0,
+            };
+            offset += width / 2.0;
+            let l1 = Arc::new(Mutex::new(Lane::new(
+                c1s[i].clone(),
+                c0s[c0s.len() - i - 1].clone(),
+                curve.reverse().offset(offset),
+                width,
+                *lane_kind
+            )));
+            offset += width / 2.0;
+
+            // Add lanes to lane list
+            lanes.push(l1.clone());
+            
+            // Add lanes to connections
+            c1s[i].lock().unwrap().out_lane.push(l1.clone());
+            c0s[c0s.len() - i - 1].lock().unwrap().in_lane.push(l1.clone());
+            i += 1;
+        }
+        
 
         // Add Properties
         let mut properties = Vec::new();
@@ -84,32 +143,6 @@ impl Road {
             ));
             i += plot_width;
         }
-
-        // Add lanes to road
-        let mut lanes = Vec::new();
-        let l0 = Arc::new(Mutex::new(Lane::new(
-            c0s.first().unwrap().clone(),
-            c1s.last().unwrap().clone(),
-            curve.offset(2.5),
-            width / 2.0,
-            LaneKind::Car
-        )));
-        lanes.push(l0.clone());
-        let l1 = Arc::new(Mutex::new(Lane::new(
-            c1s.first().unwrap().clone(),
-            c0s.last().unwrap().clone(),
-            curve.reverse().offset(2.5),
-            width / 2.0,
-            LaneKind::Car
-        )));
-        lanes.push(l1.clone());
-
-        // Add lanes to connections...
-        c0s.first().unwrap().lock().unwrap().out_lane.push(l0.clone());
-        c0s.last().unwrap().lock().unwrap().in_lane.push(l1.clone());
-
-        c1s.first().unwrap().lock().unwrap().out_lane.push(l1.clone());
-        c1s.last().unwrap().lock().unwrap().in_lane.push(l0.clone());
 
         drop(i0_lock);
         drop(i1_lock);

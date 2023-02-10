@@ -4,6 +4,7 @@ use cairo::Context;
 
 use crate::{connection::Connection, curve::Curve, node::Node};
 
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum LaneKind {
     Car,
     Bike,
@@ -54,7 +55,7 @@ impl Lane {
         context.line_to(curve1.n0.x, curve1.n0.y);
 
         context.set_source_rgb(r, g, b);
-        context.stroke_preserve().expect("omg!");
+        //context.stroke_preserve().expect("omg!");
         context.fill().expect("omg!");
 
         // Draw Center Line

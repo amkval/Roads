@@ -11,6 +11,9 @@ use gtk4::{
     traits::{GestureExt, GestureSingleExt, GtkWindowExt, WidgetExt},
     Application, ApplicationWindow, DrawingArea,
 };
+use lane::{LaneKind, Lane};
+use road::RoadKind;
+use road_profile::RoadProfile;
 
 extern crate cairo;
 
@@ -23,6 +26,7 @@ mod map;
 mod node;
 mod property;
 mod road;
+mod road_profile;
 mod toolbar;
 
 use crate::intersection::Intersection;
@@ -30,7 +34,7 @@ use crate::map::Map;
 use crate::road::Road;
 use crate::toolbar::Toolbar;
 
-const SCALE: f64 = 2.0;
+const SCALE: f64 = 3.0;
 const TILE: f64 = 8.0;
 
 fn main() {
@@ -52,6 +56,31 @@ fn main() {
         let drawing_area = DrawingArea::new();
         let map = Arc::new(Mutex::new(Map::new()));
         let toolbar = Arc::new(Mutex::new(Toolbar::new()));
+        let mut road_profiles: Vec<Arc<Mutex<RoadProfile>>> = Vec::new();
+
+        // Add Basic Road Profiles
+        {
+            // One tile Car only
+            let road_profile = Arc::new(Mutex::new(RoadProfile {
+                right_lane_kinds: vec![LaneKind::Car],
+                left_lane_kinds: vec![LaneKind::Car],
+            }));
+            road_profiles.push(road_profile);
+
+            // Two tile Bike Lanes and Sidewalks
+            let road_profile = Arc::new(Mutex::new(RoadProfile {
+                right_lane_kinds: vec![LaneKind::Car, LaneKind::Bike, LaneKind::Pedestrian],
+                left_lane_kinds: vec![LaneKind::Car, LaneKind::Bike, LaneKind::Pedestrian],
+            }));
+            road_profiles.push(road_profile);
+
+            // Eight lanes
+            let road_profile = Arc::new(Mutex::new(RoadProfile {
+                right_lane_kinds: vec![LaneKind::Car, LaneKind::Car, LaneKind::Car, LaneKind::Car],
+                left_lane_kinds: vec![LaneKind::Car, LaneKind::Car, LaneKind::Car, LaneKind::Car],
+            }));
+            road_profiles.push(road_profile);
+        }
 
         // Set Draw Function
         {
@@ -83,8 +112,8 @@ fn main() {
 
                 // Did we click on an existing Intersection?
                 let result = map.intersections.iter().find(|intersection| {
-                    (intersection.lock().unwrap().center.x - new_x).abs() < 20.0
-                        && (intersection.lock().unwrap().center.y - new_y).abs() < 20.0
+                    (intersection.lock().unwrap().center.x - new_x).abs() < 10.0
+                        && (intersection.lock().unwrap().center.y - new_y).abs() < 10.0
                 });
 
                 let new_intersection = match result {
@@ -103,8 +132,8 @@ fn main() {
                             // They are the same.
                             return;
                         }
-                    },
-                    None => {},
+                    }
+                    None => {}
                 }
 
                 if map.intersections.len() > 1 {
@@ -132,7 +161,7 @@ fn main() {
                                 old_intersection.clone(),
                                 middle_intersection.clone(),
                                 new_intersection.clone(),
-                                10.0,
+                                road_profiles.last().unwrap().clone(),
                             )));
 
                             old_intersection
